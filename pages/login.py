@@ -3,7 +3,6 @@ pages/login.py — Đăng nhập & Đăng ký, giao diện sáng sạch
 """
 import streamlit as st
 import os
-import json
 
 
 def _load_css():
@@ -36,10 +35,21 @@ def show():
         background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #e0f2fe 100%) !important;
     }
     section.main > div.block-container { padding: 0 !important; }
+    
+    /* Style cho input đẹp hơn */
+    .stTextInput > div > div > input {
+        border-radius: 12px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        padding: 10px 14px !important;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #0ea5e9 !important;
+        box-shadow: 0 0 0 2px rgba(14,165,233,0.2) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    # ── Decorative top bar ────────────────────────────────────────────────
+    # Decorative top bar
     st.markdown("""
     <div style="height:4px;background:linear-gradient(90deg,#0ea5e9,#10b981,#0ea5e9);width:100%;"></div>
     """, unsafe_allow_html=True)
@@ -49,7 +59,7 @@ def show():
     _, center, _ = st.columns([1, 1.6, 1])
 
     with center:
-        # ── Logo ──────────────────────────────────────────────────────────
+        # Logo
         st.markdown("""
         <div style="text-align:center; margin-bottom:28px;">
             <div style="display:inline-flex;align-items:center;justify-content:center;
@@ -67,7 +77,7 @@ def show():
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Tab chooser ───────────────────────────────────────────────────
+        # Tab chooser
         if "auth_tab" not in st.session_state:
             st.session_state["auth_tab"] = "login"
 
@@ -87,41 +97,29 @@ def show():
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-        # ── Card ──────────────────────────────────────────────────────────
-        st.markdown("""
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:18px;
-             padding:32px 28px 24px;box-shadow:0 8px 32px rgba(14,165,233,0.10);">
-        </div>
-        """, unsafe_allow_html=True)
-
         err_spot = st.empty()
-        ok_spot  = st.empty()
+        ok_spot = st.empty()
 
-        # ════════════════════════════════════════════
+        # ĐĂNG NHẬP
         if st.session_state["auth_tab"] == "login":
-        # ════════════════════════════════════════════
+            # Dòng chữ - không có khung trắng
             st.markdown("""
-            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:18px;
-                 padding:32px 28px 24px;box-shadow:0 8px 32px rgba(14,165,233,0.10);">
-                <p style="font-size:13px;color:#64748b;margin-bottom:16px;text-align:center;">
-                    Nhập thông tin để truy cập hệ thống
-                </p>
-            </div>
+            <p style="font-size:13px;color:#64748b;margin-bottom:20px;text-align:center;">
+                Nhập thông tin để truy cập hệ thống
+            </p>
             """, unsafe_allow_html=True)
 
-            email    = st.text_input("📧 Email", placeholder="doctor@health.ai",
-                                      key="li_email")
-            password = st.text_input("🔑 Mật khẩu", type="password",
-                                      placeholder="Nhập mật khẩu", key="li_pass")
+            # Form đăng nhập trực tiếp, không khung
+            email = st.text_input("📧 Email", placeholder="doctor@health.ai", key="li_email")
+            password = st.text_input("🔑 Mật khẩu", type="password", placeholder="Nhập mật khẩu", key="li_pass")
 
-            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-            btn_login = st.button("🚀  Đăng nhập", type="primary",
-                                   use_container_width=True, key="do_login")
+            st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+            btn_login = st.button("🚀  Đăng nhập", type="primary", use_container_width=True, key="do_login")
 
             st.markdown("""
-            <div style="text-align:center;font-size:12px;color:#94a3b8;margin-top:16px;">
+            <div style="text-align:center;font-size:12px;color:#94a3b8;margin-top:20px;">
                 Chưa có tài khoản?
-                <span style="color:#0ea5e9;cursor:pointer;">Chọn tab Đăng ký ↑</span>
+                <span style="color:#0ea5e9;">Chọn tab Đăng ký ↑</span>
             </div>
             """, unsafe_allow_html=True)
 
@@ -134,36 +132,29 @@ def show():
                     accounts = _get_accounts()
                     acct = accounts.get(e)
                     if acct and acct["password"] == p:
-                        st.session_state["logged_in"]  = True
+                        st.session_state["logged_in"] = True
                         st.session_state["user_email"] = e
-                        st.session_state["user_name"]  = acct.get("name", e.split("@")[0].capitalize())
-                        st.session_state["page"]       = "home"
+                        st.session_state["user_name"] = acct.get("name", e.split("@")[0].capitalize())
+                        st.session_state["page"] = "home"
                         st.rerun()
                     else:
                         err_spot.error("❌ Email hoặc mật khẩu không đúng.")
 
-        # ════════════════════════════════════════════
-        else:  # register tab
-        # ════════════════════════════════════════════
+        # ĐĂNG KÝ
+        else:
             st.markdown("""
-            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:18px;
-                 padding:32px 28px 24px;box-shadow:0 8px 32px rgba(14,165,233,0.10);">
-                <p style="font-size:13px;color:#64748b;margin-bottom:16px;text-align:center;">
-                    Tạo tài khoản mới để sử dụng hệ thống
-                </p>
-            </div>
+            <p style="font-size:13px;color:#64748b;margin-bottom:20px;text-align:center;">
+                Tạo tài khoản mới để sử dụng hệ thống
+            </p>
             """, unsafe_allow_html=True)
 
             full_name = st.text_input("👤 Họ và tên", placeholder="Nguyễn Văn A", key="rg_name")
-            email_r   = st.text_input("📧 Email", placeholder="example@email.com", key="rg_email")
-            pass_r    = st.text_input("🔑 Mật khẩu", type="password",
-                                       placeholder="Tối thiểu 6 ký tự", key="rg_pass")
-            pass_r2   = st.text_input("🔑 Xác nhận mật khẩu", type="password",
-                                       placeholder="Nhập lại mật khẩu", key="rg_pass2")
+            email_r = st.text_input("📧 Email", placeholder="example@email.com", key="rg_email")
+            pass_r = st.text_input("🔑 Mật khẩu", type="password", placeholder="Tối thiểu 6 ký tự", key="rg_pass")
+            pass_r2 = st.text_input("🔑 Xác nhận mật khẩu", type="password", placeholder="Nhập lại mật khẩu", key="rg_pass2")
 
-            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-            btn_reg = st.button("✅  Tạo tài khoản", type="primary",
-                                 use_container_width=True, key="do_register")
+            st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+            btn_reg = st.button("✅  Tạo tài khoản", type="primary", use_container_width=True, key="do_register")
 
             if btn_reg:
                 e = email_r.strip()
