@@ -245,71 +245,179 @@ def show():
                     for t, d in advice_items
                 )
 
-                # Overlay popup
-                st.markdown(f"""
-                <div style="position:fixed;inset:0;z-index:9999;
-                     background:rgba(15,23,42,0.55);backdrop-filter:blur(6px);
-                     display:flex;align-items:center;justify-content:center;
-                     animation:fadeIn 0.2s ease;">
-                    <div style="background:#fff;border-radius:22px;padding:36px 32px;
-                         max-width:480px;width:94vw;
-                         box-shadow:0 24px 80px rgba(0,0,0,0.20);
-                         animation:slideUp 0.28s ease;">
+               # Overlay popup - Cách viết an toàn hơn
+                popup_html = f"""
+                <style>
+                .popup-overlay {{
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(15, 23, 42, 0.75);
+                    backdrop-filter: blur(8px);
+                    z-index: 99999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: fadeIn 0.2s ease;
+                }}
+                .popup-container {{
+                    background: white;
+                    border-radius: 24px;
+                    padding: 32px 28px;
+                    max-width: 480px;
+                    width: 90%;
+                    max-height: 85vh;
+                    overflow-y: auto;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                    animation: slideUp 0.3s ease;
+                    position: relative;
+                }}
+                .popup-container::-webkit-scrollbar {{
+                    width: 4px;
+                }}
+                .popup-container::-webkit-scrollbar-track {{
+                    background: #f1f5f9;
+                    border-radius: 10px;
+                }}
+                .popup-container::-webkit-scrollbar-thumb {{
+                    background: #0ea5e9;
+                    border-radius: 10px;
+                }}
+                .risk-badge {{
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 50%;
+                    background: {bg_col};
+                    font-size: 32px;
+                    margin-bottom: 12px;
+                }}
+                .risk-level {{
+                    font-family: 'Lora', serif;
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: {color};
+                    margin-bottom: 4px;
+                }}
+                .risk-percent {{
+                    font-family: 'Lora', serif;
+                    font-size: 52px;
+                    font-weight: 700;
+                    color: {color};
+                    margin: 16px 0 12px;
+                }}
+                .risk-bar-container {{
+                    background: #f1f5f9;
+                    border-radius: 10px;
+                    height: 8px;
+                    margin: 12px 0;
+                    overflow: hidden;
+                }}
+                .risk-bar {{
+                    height: 100%;
+                    width: {pct:.1f}%;
+                    background: linear-gradient(90deg, #10b981, {color});
+                    border-radius: 10px;
+                    transition: width 0.5s;
+                }}
+                .chip {{
+                    background: #f1f5f9;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 999px;
+                    padding: 4px 14px;
+                    font-size: 12px;
+                    color: #475569;
+                    display: inline-block;
+                }}
+                .advice-item {{
+                    display: flex;
+                    gap: 12px;
+                    padding: 10px 0;
+                    border-bottom: 1px solid #f1f5f9;
+                }}
+                .advice-title {{
+                    min-width: 140px;
+                    font-weight: 700;
+                    color: #0f172a;
+                    font-size: 13px;
+                }}
+                .advice-desc {{
+                    color: #475569;
+                    font-size: 12.5px;
+                    line-height: 1.5;
+                }}
+                .close-btn {{
+                    background: #f1f5f9;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 10px 20px;
+                    width: 100%;
+                    font-weight: 600;
+                    color: #475569;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }}
+                .close-btn:hover {{
+                    background: #e2e8f0;
+                }}
+                </style>
 
-                        <!-- Result header -->
-                        <div style="text-align:center;margin-bottom:24px;">
-                            <div style="display:inline-flex;align-items:center;justify-content:center;
-                                 width:64px;height:64px;border-radius:50%;background:{bg_col};
-                                 font-size:28px;margin-bottom:12px;">{emoji}</div>
-                            <div style="font-family:'Lora',serif;font-size:22px;
-                                 color:{color};font-weight:700;">{level_txt}</div>
-                            <div style="font-size:12px;color:#64748b;margin-top:4px;">
-                                Xác suất mắc bệnh tiểu đường
-                            </div>
+                <div class="popup-overlay" id="popupOverlay">
+                    <div class="popup-container">
+                        <div style="text-align: center;">
+                            <div class="risk-badge">{emoji}</div>
+                            <div class="risk-level">{level_txt}</div>
+                            <div style="font-size: 12px; color: #64748b;">Xác suất mắc bệnh tiểu đường</div>
                         </div>
 
-                        <!-- Big percent -->
-                        <div style="text-align:center;margin-bottom:20px;">
-                            <span style="font-family:'Lora',serif;font-size:56px;
-                                   font-weight:700;color:{color};">{pct:.1f}%</span>
+                        <div style="text-align: center;">
+                            <div class="risk-percent">{pct:.1f}%</div>
                         </div>
 
-                        <!-- Risk bar -->
-                        <div style="margin-bottom:20px;">
-                            <div style="display:flex;justify-content:space-between;
-                                 font-size:10px;color:#94a3b8;margin-bottom:5px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8;">
                                 <span>Thấp</span><span>Trung bình</span><span>Cao</span>
                             </div>
-                            <div style="height:9px;background:#f1f5f9;border-radius:5px;overflow:hidden;">
-                                <div style="height:100%;width:{min(pct,100):.1f}%;
-                                     background:linear-gradient(90deg,#10b981,{color});
-                                     border-radius:5px;transition:width 0.5s;"></div>
+                            <div class="risk-bar-container">
+                                <div class="risk-bar"></div>
                             </div>
                         </div>
 
-                        <!-- Chips -->
-                        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;">
-                            {"".join(f'<span style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:4px 12px;font-size:11.5px;color:#475569;">{v}</span>' for v in [f"BMI {bmi:.1f}", f"Glucose {glucose}", f"Tuổi {age}", f"Insulin {insulin}"])}
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0;">
+                            <span class="chip">BMI {bmi:.1f}</span>
+                            <span class="chip">Glucose {glucose}</span>
+                            <span class="chip">Tuổi {age}</span>
+                            <span class="chip">Insulin {insulin}</span>
                         </div>
 
-                        <!-- Advice -->
-                        <div style="background:#f8fafc;border:1px solid #e2e8f0;
-                             border-radius:12px;padding:14px 16px;margin-bottom:16px;">
-                            <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:4px;">
-                                📋 Lời khuyên sức khỏe
-                            </div>
-                            {advice_html}
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin: 16px 0;">
+                            <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px; font-size: 13px;">📋 Lời khuyên sức khỏe</div>
+                            {"".join(f'<div class="advice-item"><div class="advice-title">{t}</div><div class="advice-desc">{d}</div></div>' for t, d in advice_items)}
                         </div>
 
-                        <div style="font-size:11px;color:#94a3b8;text-align:center;">
+                        <div style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 12px;">
                             ⚠️ Đây là kết quả AI — không thay thế chẩn đoán y tế chuyên nghiệp.
                         </div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
 
-                st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-                _, close_col, _ = st.columns([1, 4, 1])
-                with close_col:
-                    if st.button("✕  Đóng kết quả", key="close_modal", use_container_width=True):
-                        st.rerun()
+                <script>
+                // Tự động đóng popup khi click ra ngoài
+                document.getElementById('popupOverlay').addEventListener('click', function(e) {{
+                    if (e.target === this) {{
+                        this.remove();
+                    }}
+                }});
+                </script>
+                """
+
+                # Hiển thị popup
+                st.markdown(popup_html, unsafe_allow_html=True)
+
+                # Thêm nút đóng (cách khác dùng session state)
+                if st.button("✕ Đóng", key="close_modal"):
+                    st.rerun()
