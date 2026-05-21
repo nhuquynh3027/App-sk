@@ -187,8 +187,13 @@ def show():
             left, gap, right = st.columns([5, 0.5, 5])
 
             with left:
-                st.markdown('<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:24px 22px;">', unsafe_allow_html=True)
-                st.markdown('<div class="section-header">📋 Thông số lâm sàng</div>', unsafe_allow_html=True)
+                # Bỏ khung trắng, chỉ giữ tiêu đề
+                st.markdown("""
+                <div style="font-family:'Lora',serif; font-size:22px; font-weight:700; 
+                     color:#0f172a; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                    📋 Thông số lâm sàng
+                </div>
+                """, unsafe_allow_html=True)
 
                 pregnancies = st.number_input("Số lần mang thai", min_value=0, max_value=20, value=1, step=1)
                 glucose = st.slider("Đường huyết (mg/dL)", 0, 200, 120)
@@ -196,11 +201,13 @@ def show():
                 skin_thickness = st.slider("Độ dày nếp gấp da (mm)", 0, 100, 20)
                 insulin = st.slider("Insulin (μU/mL)", 0, 900, 80)
 
-                st.markdown('</div>', unsafe_allow_html=True)
-
             with right:
-                st.markdown('<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:24px 22px;">', unsafe_allow_html=True)
-                st.markdown('<div class="section-header">📏 Nhân trắc học & Tuổi</div>', unsafe_allow_html=True)
+                st.markdown("""
+                <div style="font-family:'Lora',serif; font-size:22px; font-weight:700; 
+                     color:#0f172a; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                    📏 Nhân trắc học &amp; Tuổi
+                </div>
+                """, unsafe_allow_html=True)
 
                 weight = st.number_input("Cân nặng (kg)", min_value=1.0, max_value=200.0, value=70.0, step=0.5)
                 height_cm = st.number_input("Chiều cao (cm)", min_value=50.0, max_value=250.0, value=165.0, step=0.5)
@@ -217,8 +224,6 @@ def show():
 
                 dpf = st.number_input("Chức năng phả hệ tiểu đường (DPF)", min_value=0.0, max_value=3.0, value=0.5, step=0.01)
                 age = st.number_input("Tuổi", min_value=1, max_value=120, value=30, step=1)
-
-                st.markdown('</div>', unsafe_allow_html=True)
 
             # Nút phân tích
             st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
