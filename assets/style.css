@@ -252,7 +252,11 @@ hr { border-color: var(--border) !important; margin: 20px 0 !important; }
     }
 }
 
-/* Đảm bảo popup hiển thị đúng */
+/* Fix cho popup hiển thị đúng */
 div[data-testid="stMarkdownContainer"] {
+    position: static !important;
+}
+
+.stMarkdown {
     position: static !important;
 }

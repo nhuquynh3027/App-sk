@@ -245,179 +245,177 @@ def show():
                     for t, d in advice_items
                 )
 
-               # Overlay popup - Cách viết an toàn hơn
+                # Overlay popup - FIXED VERSION
                 popup_html = f"""
                 <style>
-                .popup-overlay {{
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(15, 23, 42, 0.75);
-                    backdrop-filter: blur(8px);
-                    z-index: 99999;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    animation: fadeIn 0.2s ease;
-                }}
-                .popup-container {{
-                    background: white;
-                    border-radius: 24px;
-                    padding: 32px 28px;
-                    max-width: 480px;
-                    width: 90%;
-                    max-height: 85vh;
-                    overflow-y: auto;
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                    animation: slideUp 0.3s ease;
-                    position: relative;
-                }}
-                .popup-container::-webkit-scrollbar {{
-                    width: 4px;
-                }}
-                .popup-container::-webkit-scrollbar-track {{
-                    background: #f1f5f9;
-                    border-radius: 10px;
-                }}
-                .popup-container::-webkit-scrollbar-thumb {{
-                    background: #0ea5e9;
-                    border-radius: 10px;
-                }}
-                .risk-badge {{
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 64px;
-                    height: 64px;
-                    border-radius: 50%;
-                    background: {bg_col};
-                    font-size: 32px;
-                    margin-bottom: 12px;
-                }}
-                .risk-level {{
-                    font-family: 'Lora', serif;
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: {color};
-                    margin-bottom: 4px;
-                }}
-                .risk-percent {{
-                    font-family: 'Lora', serif;
-                    font-size: 52px;
-                    font-weight: 700;
-                    color: {color};
-                    margin: 16px 0 12px;
-                }}
-                .risk-bar-container {{
-                    background: #f1f5f9;
-                    border-radius: 10px;
-                    height: 8px;
-                    margin: 12px 0;
-                    overflow: hidden;
-                }}
-                .risk-bar {{
-                    height: 100%;
-                    width: {pct:.1f}%;
-                    background: linear-gradient(90deg, #10b981, {color});
-                    border-radius: 10px;
-                    transition: width 0.5s;
-                }}
-                .chip {{
-                    background: #f1f5f9;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 999px;
-                    padding: 4px 14px;
-                    font-size: 12px;
-                    color: #475569;
-                    display: inline-block;
-                }}
-                .advice-item {{
-                    display: flex;
-                    gap: 12px;
-                    padding: 10px 0;
-                    border-bottom: 1px solid #f1f5f9;
-                }}
-                .advice-title {{
-                    min-width: 140px;
-                    font-weight: 700;
-                    color: #0f172a;
-                    font-size: 13px;
-                }}
-                .advice-desc {{
-                    color: #475569;
-                    font-size: 12.5px;
-                    line-height: 1.5;
-                }}
-                .close-btn {{
-                    background: #f1f5f9;
-                    border: none;
-                    border-radius: 12px;
-                    padding: 10px 20px;
-                    width: 100%;
-                    font-weight: 600;
-                    color: #475569;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }}
-                .close-btn:hover {{
-                    background: #e2e8f0;
-                }}
+                    .popup-overlay-fixed {{
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background-color: rgba(0, 0, 0, 0.7);
+                        z-index: 999999;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }}
+                    .popup-content-fixed {{
+                        background: white;
+                        border-radius: 24px;
+                        padding: 30px;
+                        max-width: 450px;
+                        width: 90%;
+                        max-height: 85vh;
+                        overflow-y: auto;
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                        position: relative;
+                    }}
+                    .result-emoji {{
+                        font-size: 60px;
+                        text-align: center;
+                        margin-bottom: 10px;
+                    }}
+                    .result-level {{
+                        font-size: 24px;
+                        font-weight: bold;
+                        text-align: center;
+                        margin-bottom: 5px;
+                    }}
+                    .result-percent {{
+                        font-size: 56px;
+                        font-weight: bold;
+                        text-align: center;
+                        margin: 15px 0;
+                    }}
+                    .risk-bar-bg {{
+                        background: #e2e8f0;
+                        border-radius: 10px;
+                        height: 10px;
+                        margin: 15px 0;
+                        overflow: hidden;
+                    }}
+                    .risk-bar-fill {{
+                        background: {color};
+                        width: {pct}%;
+                        height: 100%;
+                        border-radius: 10px;
+                        transition: width 0.5s;
+                    }}
+                    .risk-labels {{
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 11px;
+                        color: #64748b;
+                        margin-top: 5px;
+                    }}
+                    .chip-group {{
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin: 15px 0;
+                    }}
+                    .chip-item {{
+                        background: #f1f5f9;
+                        border-radius: 20px;
+                        padding: 5px 12px;
+                        font-size: 12px;
+                        color: #334155;
+                    }}
+                    .advice-box {{
+                        background: #f8fafc;
+                        border-radius: 12px;
+                        padding: 15px;
+                        margin: 15px 0;
+                    }}
+                    .advice-line {{
+                        padding: 8px 0;
+                        border-bottom: 1px solid #e2e8f0;
+                    }}
+                    .advice-title {{
+                        font-weight: bold;
+                        font-size: 13px;
+                        color: #0f172a;
+                    }}
+                    .advice-desc {{
+                        font-size: 12px;
+                        color: #475569;
+                        margin-top: 3px;
+                    }}
+                    .close-popup-btn {{
+                        background: #0ea5e9;
+                        color: white;
+                        border: none;
+                        border-radius: 12px;
+                        padding: 10px 20px;
+                        width: 100%;
+                        font-weight: bold;
+                        cursor: pointer;
+                        margin-top: 15px;
+                    }}
+                    .close-popup-btn:hover {{
+                        background: #0284c7;
+                    }}
+                    .warning-note {{
+                        font-size: 10px;
+                        color: #94a3b8;
+                        text-align: center;
+                        margin-top: 12px;
+                    }}
                 </style>
-
-                <div class="popup-overlay" id="popupOverlay">
-                    <div class="popup-container">
-                        <div style="text-align: center;">
-                            <div class="risk-badge">{emoji}</div>
-                            <div class="risk-level">{level_txt}</div>
-                            <div style="font-size: 12px; color: #64748b;">Xác suất mắc bệnh tiểu đường</div>
+                
+                <div class="popup-overlay-fixed" id="popupOverlay">
+                    <div class="popup-content-fixed">
+                        <div class="result-emoji">{emoji}</div>
+                        <div class="result-level" style="color: {color};">{level_txt}</div>
+                        <div style="text-align: center; font-size: 13px; color: #64748b;">Xác suất mắc bệnh tiểu đường</div>
+                        
+                        <div class="result-percent" style="color: {color};">{pct:.1f}%</div>
+                        
+                        <div class="risk-bar-bg">
+                            <div class="risk-bar-fill"></div>
                         </div>
-
-                        <div style="text-align: center;">
-                            <div class="risk-percent">{pct:.1f}%</div>
+                        <div class="risk-labels">
+                            <span>Thấp</span>
+                            <span>Trung bình</span>
+                            <span>Cao</span>
                         </div>
-
-                        <div>
-                            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8;">
-                                <span>Thấp</span><span>Trung bình</span><span>Cao</span>
-                            </div>
-                            <div class="risk-bar-container">
-                                <div class="risk-bar"></div>
-                            </div>
+                        
+                        <div class="chip-group">
+                            <span class="chip-item">BMI {bmi:.1f}</span>
+                            <span class="chip-item">Glucose {glucose}</span>
+                            <span class="chip-item">Tuổi {age}</span>
+                            <span class="chip-item">Insulin {insulin}</span>
                         </div>
-
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0;">
-                            <span class="chip">BMI {bmi:.1f}</span>
-                            <span class="chip">Glucose {glucose}</span>
-                            <span class="chip">Tuổi {age}</span>
-                            <span class="chip">Insulin {insulin}</span>
+                        
+                        <div class="advice-box">
+                            <div style="font-weight: bold; margin-bottom: 10px;">📋 Lời khuyên sức khỏe</div>
+                            {"".join(f'<div class="advice-line"><div class="advice-title">{t}</div><div class="advice-desc">{d}</div></div>' for t, d in advice_items)}
                         </div>
-
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin: 16px 0;">
-                            <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px; font-size: 13px;">📋 Lời khuyên sức khỏe</div>
-                            {"".join(f'<div class="advice-item"><div class="advice-title">{t}</div><div class="advice-desc">{d}</div></div>' for t, d in advice_items)}
-                        </div>
-
-                        <div style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 12px;">
+                        
+                        <div class="warning-note">
                             ⚠️ Đây là kết quả AI — không thay thế chẩn đoán y tế chuyên nghiệp.
                         </div>
+                        
+                        <button class="close-popup-btn" onclick="document.getElementById('popupOverlay').style.display='none'">
+                            ✕ Đóng
+                        </button>
                     </div>
                 </div>
-
+                
                 <script>
-                // Tự động đóng popup khi click ra ngoài
-                document.getElementById('popupOverlay').addEventListener('click', function(e) {{
-                    if (e.target === this) {{
-                        this.remove();
-                    }}
-                }});
+                    // Đóng popup khi click ra ngoài
+                    var overlay = document.getElementById('popupOverlay');
+                    overlay.addEventListener('click', function(e) {{
+                        if (e.target === overlay) {{
+                            overlay.style.display = 'none';
+                        }}
+                    }});
                 </script>
                 """
-
+                
                 # Hiển thị popup
                 st.markdown(popup_html, unsafe_allow_html=True)
-
-                # Thêm nút đóng (cách khác dùng session state)
-                if st.button("✕ Đóng", key="close_modal"):
-                    st.rerun()
+                
+                # Dừng lại để không render tiếp
+                st.stop()
