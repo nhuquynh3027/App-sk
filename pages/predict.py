@@ -271,71 +271,187 @@ def show():
                         f'{label}</span>'
                     )
 
-                # Popup — everything inline, zero CSS classes
-                st.markdown(f"""
-                <div style="position:fixed;top:0;left:0;right:0;bottom:0;
-                     background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);
-                     z-index:99999;display:flex;align-items:center;justify-content:center;">
-                    <div style="background:#ffffff;border-radius:22px;
-                         padding:36px 32px 28px;max-width:460px;width:92vw;
-                         max-height:88vh;overflow-y:auto;
-                         box-shadow:0 24px 80px rgba(0,0,0,0.22);">
-
-                        <!-- Icon + level -->
-                        <div style="text-align:center;margin-bottom:20px;">
-                            <div style="display:inline-flex;align-items:center;justify-content:center;
-                                 width:70px;height:70px;border-radius:50%;
-                                 background:{bg_col};font-size:32px;margin-bottom:12px;">{emoji}</div>
-                            <div style="font-family:'Lora',serif;font-size:22px;
-                                 font-weight:700;color:{color};">{level_txt}</div>
-                            <div style="font-size:12px;color:#64748b;margin-top:4px;">
-                                Xác suất mắc bệnh tiểu đường
+                # Popup - Dùng components.html thay vì markdown
+                from streamlit.components.v1 import html
+                
+                popup_html_code = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        * {{
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }}
+                        body {{
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                        }}
+                        .overlay {{
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(15, 23, 42, 0.75);
+                            backdrop-filter: blur(6px);
+                            z-index: 99999;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }}
+                        .popup {{
+                            background: white;
+                            border-radius: 24px;
+                            padding: 32px;
+                            max-width: 460px;
+                            width: 90%;
+                            max-height: 85vh;
+                            overflow-y: auto;
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                        }}
+                        .icon {{
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 70px;
+                            height: 70px;
+                            border-radius: 50%;
+                            background: {bg_col};
+                            font-size: 36px;
+                            margin-bottom: 12px;
+                        }}
+                        .level {{
+                            font-family: 'Georgia', serif;
+                            font-size: 24px;
+                            font-weight: bold;
+                            color: {color};
+                            margin-top: 8px;
+                        }}
+                        .percent {{
+                            font-family: 'Georgia', serif;
+                            font-size: 56px;
+                            font-weight: bold;
+                            color: {color};
+                            margin: 16px 0 12px;
+                        }}
+                        .risk-bar-bg {{
+                            background: #f1f5f9;
+                            border-radius: 10px;
+                            height: 10px;
+                            margin: 12px 0 8px;
+                            overflow: hidden;
+                        }}
+                        .risk-bar-fill {{
+                            background: linear-gradient(90deg, #10b981, {color});
+                            width: {pct:.1f}%;
+                            height: 100%;
+                            border-radius: 10px;
+                        }}
+                        .risk-labels {{
+                            display: flex;
+                            justify-content: space-between;
+                            font-size: 11px;
+                            color: #94a3b8;
+                            margin-bottom: 20px;
+                        }}
+                        .chip {{
+                            background: #f1f5f9;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 999px;
+                            padding: 5px 14px;
+                            font-size: 12px;
+                            color: #334155;
+                            display: inline-block;
+                        }}
+                        .advice-box {{
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 12px;
+                            padding: 14px;
+                            margin: 16px 0;
+                        }}
+                        .advice-title {{
+                            font-weight: bold;
+                            font-size: 13px;
+                            color: #0f172a;
+                        }}
+                        .advice-desc {{
+                            font-size: 12px;
+                            color: #475569;
+                            margin-top: 3px;
+                        }}
+                        .advice-item {{
+                            padding: 8px 0;
+                        }}
+                        .close-btn {{
+                            background: #0ea5e9;
+                            color: white;
+                            border: none;
+                            border-radius: 12px;
+                            padding: 10px 20px;
+                            width: 100%;
+                            font-weight: bold;
+                            font-size: 14px;
+                            cursor: pointer;
+                            margin-top: 16px;
+                        }}
+                        .close-btn:hover {{
+                            background: #0284c7;
+                        }}
+                        .disclaimer {{
+                            font-size: 10px;
+                            color: #94a3b8;
+                            text-align: center;
+                            margin-top: 12px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="overlay" onclick="this.style.display='none'">
+                        <div class="popup" onclick="event.stopPropagation()">
+                            <div style="text-align: center;">
+                                <div class="icon">{emoji}</div>
+                                <div class="level">{level_txt}</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Xác suất mắc bệnh tiểu đường</div>
+                                <div class="percent">{pct:.1f}%</div>
                             </div>
-                        </div>
-
-                        <!-- Big percent -->
-                        <div style="text-align:center;margin-bottom:20px;">
-                            <span style="font-family:'Lora',serif;font-size:58px;
-                                   font-weight:700;color:{color};">{pct:.1f}%</span>
-                        </div>
-
-                        <!-- Risk bar -->
-                        <div style="display:flex;justify-content:space-between;
-                             font-size:10px;color:#94a3b8;margin-bottom:5px;">
-                            <span>Thấp</span><span>Trung bình</span><span>Cao</span>
-                        </div>
-                        <div style="height:10px;background:#f1f5f9;border-radius:6px;
-                             overflow:hidden;margin-bottom:18px;">
-                            <div style="height:100%;width:{min(pct,100):.1f}%;
-                                 background:linear-gradient(90deg,#10b981,{color});
-                                 border-radius:6px;"></div>
-                        </div>
-
-                        <!-- Chips -->
-                        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;">
-                            {chips}
-                        </div>
-
-                        <!-- Advice box -->
-                        <div style="background:#f8fafc;border:1px solid #e2e8f0;
-                             border-radius:12px;padding:14px 16px;margin-bottom:16px;">
-                            <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px;">
-                                📋 Lời khuyên sức khỏe
+                            
+                            <div class="risk-bar-bg">
+                                <div class="risk-bar-fill"></div>
                             </div>
-                            {advice_rows}
-                        </div>
-
-                        <!-- Disclaimer -->
-                        <div style="font-size:11px;color:#94a3b8;text-align:center;">
-                            ⚠️ Kết quả AI — không thay thế chẩn đoán y tế chuyên nghiệp.
+                            <div class="risk-labels">
+                                <span>Thấp</span>
+                                <span>Trung bình</span>
+                                <span>Cao</span>
+                            </div>
+                            
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+                                <span class="chip">BMI {bmi:.1f}</span>
+                                <span class="chip">Glucose {glucose}</span>
+                                <span class="chip">Tuổi {age}</span>
+                                <span class="chip">Insulin {insulin}</span>
+                            </div>
+                            
+                            <div class="advice-box">
+                                <div style="font-weight: bold; margin-bottom: 8px;">📋 Lời khuyên sức khỏe</div>
+                                {''.join(f'<div class="advice-item"><div class="advice-title">{t}</div><div class="advice-desc">{d}</div></div>' for t, d in advice_items)}
+                            </div>
+                            
+                            <div class="disclaimer">
+                                ⚠️ Kết quả AI — không thay thế chẩn đoán y tế chuyên nghiệp.
+                            </div>
+                            
+                            <button class="close-btn" onclick="parent.window.location.reload()">✕ Đóng</button>
                         </div>
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                # Nút đóng Streamlit (click outside không hoạt động do Streamlit rerenders)
-                st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-                _, close_col, _ = st.columns([1, 4, 1])
-                with close_col:
-                    if st.button("✕  Đóng kết quả", key="close_modal", use_container_width=True):
-                        st.rerun()
+                </body>
+                </html>
+                """
+                
+                # Hiển thị popup
+                html(popup_html_code, height=500, scrolling=False)
+                
+                # Dừng lại để không render thêm
+                st.stop()
