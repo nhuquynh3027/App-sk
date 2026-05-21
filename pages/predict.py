@@ -19,38 +19,31 @@ def _load_model_scaler():
     global _model, _scaler
     if _model is None or _scaler is None:
         import pickle
-
-        # Fix: thử nhiều đường dẫn import khác nhau
-        km_load = None
-        errors  = []
-        for import_path in [
-            "tensorflow.keras.models",
-            "keras.models",
-            "keras.saving",
-        ]:
+        
+        # Cách import chuẩn cho TensorFlow 2.x
+        try:
+            # Thử import theo cách chuẩn trước
+            from tensorflow.keras.models import load_model
+            km_load = load_model
+        except ImportError:
             try:
-                import importlib
-                mod = importlib.import_module(import_path)
-                km_load = mod.load_model
-                break
-            except Exception as ex:
-                errors.append(f"{import_path}: {ex}")
+                # Fallback cho trường hợp cài keras riêng
+                from keras.models import load_model
+                km_load = load_model
+            except ImportError as e:
+                st.error(f"❌ Không thể import Keras/TensorFlow. Lỗi: {e}")
+                st.info("💡 Trên Streamlit Cloud, hãy đảm bảo file `requirements.txt` có chứa 'tensorflow'")
+                return None, None
 
-        if km_load is None:
-            st.error(f"Không thể import Keras. Lỗi:\n" + "\n".join(errors))
-            return None, None
-
-        base        = os.path.dirname(os.path.dirname(__file__))
-        model_path  = os.path.join(base, "models", "diabetes_model.h5")
+        base = os.path.dirname(os.path.dirname(__file__))
+        model_path = os.path.join(base, "models", "diabetes_model.h5")
         scaler_path = os.path.join(base, "models", "scaler.pkl")
 
         if not os.path.exists(model_path):
-            st.error(f"❌ Không tìm thấy file mô hình tại: `{model_path}`\n\n"
-                     f"Hãy đặt `diabetes_model.h5` vào thư mục `models/`")
+            st.error(f"❌ Không tìm thấy file mô hình tại: `{model_path}`")
             return None, None
         if not os.path.exists(scaler_path):
-            st.error(f"❌ Không tìm thấy scaler tại: `{scaler_path}`\n\n"
-                     f"Hãy đặt `scaler.pkl` vào thư mục `models/`")
+            st.error(f"❌ Không tìm thấy scaler tại: `{scaler_path}`")
             return None, None
 
         try:
@@ -62,7 +55,6 @@ def _load_model_scaler():
             return None, None
 
     return _model, _scaler
-
 
 def _risk(prob):
     if prob < 0.3:  return "#10b981", "#d1fae5", "NGUY CƠ THẤP",       "✅"
