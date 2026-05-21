@@ -246,17 +246,11 @@ def show():
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                
-                st.markdown(f"""
-                <div style="background:#f1f5f9; border-radius:10px; padding:10px; margin:10px 0;">
-                    <span style="color:#64748b;">BMI của bạn:</span>
-                    <span style="font-size:20px; font-weight:bold; color:#0ea5e9;">{bmi:.1f}</span>
-                </div>
-                """, unsafe_allow_html=True)
 
                 dpf = st.number_input("Chức năng phả hệ tiểu đường (DPF)", min_value=0.0, max_value=3.0, value=0.5, step=0.01)
                 age = st.number_input("Tuổi", min_value=1, max_value=120, value=30, step=1)
-
+                
+            
             # Nút phân tích
             st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
             _, btn_mid, _ = st.columns([1, 4, 1])
