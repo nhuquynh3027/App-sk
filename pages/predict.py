@@ -1,5 +1,5 @@
 """
-pages/predict.py — Trang dự đoán, popup hoàn toàn inline style (không CSS class)
+pages/predict.py — Trang dự đoán, hiển thị kết quả trực tiếp
 """
 import streamlit as st
 import numpy as np
@@ -19,28 +19,29 @@ def _load_model_scaler():
     global _model, _scaler
     if _model is None or _scaler is None:
         import pickle
-        km_load = None
-        for path in ["tensorflow.keras.models", "keras.models"]:
+        
+        try:
+            from tensorflow.keras.models import load_model
+            km_load = load_model
+        except ImportError:
             try:
-                import importlib
-                km_load = importlib.import_module(path).load_model
-                break
-            except Exception:
-                pass
-        if km_load is None:
-            st.error("❌ Không thể import Keras/TensorFlow. Kiểm tra requirements.txt.")
-            return None, None
+                from keras.models import load_model
+                km_load = load_model
+            except ImportError as e:
+                st.error(f"❌ Không thể import Keras/TensorFlow. Lỗi: {e}")
+                return None, None
 
-        base        = os.path.dirname(os.path.dirname(__file__))
-        model_path  = os.path.join(base, "models", "diabetes_model.h5")
+        base = os.path.dirname(os.path.dirname(__file__))
+        model_path = os.path.join(base, "models", "diabetes_model.h5")
         scaler_path = os.path.join(base, "models", "scaler.pkl")
 
         if not os.path.exists(model_path):
-            st.error(f"❌ Không tìm thấy model: `{model_path}`")
+            st.error(f"❌ Không tìm thấy file mô hình tại: `{model_path}`")
             return None, None
         if not os.path.exists(scaler_path):
-            st.error(f"❌ Không tìm thấy scaler: `{scaler_path}`")
+            st.error(f"❌ Không tìm thấy scaler tại: `{scaler_path}`")
             return None, None
+
         try:
             _model = km_load(model_path)
             with open(scaler_path, "rb") as f:
@@ -48,410 +49,228 @@ def _load_model_scaler():
         except Exception as e:
             st.error(f"Lỗi tải mô hình: {e}")
             return None, None
+
     return _model, _scaler
 
 
 def _risk(prob):
-    if prob < 0.3:  return "#10b981", "#d1fae5", "NGUY CƠ THẤP",       "✅"
-    if prob < 0.7:  return "#f59e0b", "#fff7ed", "NGUY CƠ TRUNG BÌNH", "⚠️"
-    return               "#ef4444", "#fff1f2", "NGUY CƠ CAO",          "🚨"
+    if prob < 0.3:  
+        return "#10b981", "#d1fae5", "NGUY CƠ THẤP", "✅", "Thấp"
+    if prob < 0.7:  
+        return "#f59e0b", "#fef3c7", "NGUY CƠ TRUNG BÌNH", "⚠️", "Trung bình"
+    return "#ef4444", "#fee2e2", "NGUY CƠ CAO", "🚨", "Cao"
 
 
 def show():
     _load_css()
 
-    user    = st.session_state.get("user_name", "Người dùng")
+    user = st.session_state.get("user_name", "Người dùng")
     initial = user[0].upper() if user else "U"
 
-    # ── Topnav ──────────────────────────────────────────────────────────────
+    # Topnav
     st.markdown(f"""
-    <div style="width:100%;background:rgba(255,255,255,0.92);border-bottom:1px solid #e2e8f0;
-         backdrop-filter:blur(12px);padding:14px 32px;display:flex;align-items:center;
-         justify-content:space-between;position:sticky;top:0;z-index:100;
-         box-shadow:0 1px 8px rgba(14,165,233,0.07);">
-        <div style="font-family:'Lora',serif;font-size:19px;color:#0f172a;
-             display:flex;align-items:center;gap:10px;">
-            🏥 Health<span style="color:#0ea5e9;">AI</span>
-        </div>
-        <div style="font-size:13px;color:#64748b;display:flex;align-items:center;gap:8px;">
+    <div class="topnav">
+        <div class="topnav-brand">🏥 Health<span>AI</span></div>
+        <div class="topnav-user">
             <span style="color:#334155;">{user}</span>
-            <div style="width:32px;height:32px;border-radius:50%;
-                 background:linear-gradient(135deg,#0ea5e9,#10b981);
-                 display:flex;align-items:center;justify-content:center;
-                 font-size:13px;font-weight:800;color:#fff;">{initial}</div>
+            <div class="topnav-avatar">{initial}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Page header ──────────────────────────────────────────────────────────
-    st.markdown("""
-    <div style="background:linear-gradient(135deg,#e0f2fe,#f0fdf4);
-         border-bottom:1px solid #e2e8f0;padding:32px 24px 28px;text-align:center;">
-        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:#0f172a;">
-            🩺 Kiểm Tra Nguy Cơ Tiểu Đường
+    # Kiểm tra xem có đang hiển thị kết quả không
+    if st.session_state.get("show_result", False):
+        # HIỂN THỊ KẾT QUẢ
+        result = st.session_state["result_data"]
+        
+        st.markdown("""
+        <div style="background:linear-gradient(135deg,#e0f2fe,#f0fdf4);
+             border-bottom:1px solid #e2e8f0;padding:32px 24px 28px;text-align:center;">
+            <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:#0f172a;">
+                📊 Kết Quả Phân Tích
+            </div>
+            <p style="font-size:13px;color:#64748b;margin-top:6px;">
+                Dựa trên các chỉ số bạn đã nhập
+            </p>
         </div>
-        <p style="font-size:13px;color:#64748b;margin-top:6px;">
-            Nhập các chỉ số lâm sàng — AI sẽ phân tích và hiển thị kết quả ngay lập tức
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
-
-    # ── Centered wrapper ─────────────────────────────────────────────────────
-    _, main_col, _ = st.columns([1, 8, 1])
-
-    with main_col:
-        left, _, right = st.columns([5, 0.5, 5])
-
-        # ─── LEFT ───────────────────────────────────────────
-        with left:
-            st.markdown("""
-            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;
-                 padding:22px 20px 6px;box-shadow:0 2px 12px rgba(14,165,233,0.07);">
-                <div style="font-family:'Lora',serif;font-size:17px;font-weight:700;
-                     color:#0f172a;padding-bottom:10px;border-bottom:2px solid #e0f2fe;
-                     margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-                    📋 Thông số lâm sàng
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            pregnancies = st.number_input(
-                "Số lần mang thai (Pregnancies)", min_value=0, max_value=20, value=1, step=1)
-            st.markdown('<p style="font-size:11.5px;color:#94a3b8;margin-top:3px;font-style:italic;">Nhập 0 nếu chưa từng mang thai</p>', unsafe_allow_html=True)
-
-            glucose = st.slider("Đường huyết (Glucose) — mg/dL", 0, 200, 120)
-            st.markdown(f'<p style="font-size:11.5px;color:#94a3b8;margin-top:3px;font-style:italic;">Bình thường: 70–99 · Hiện tại: <b style="color:#0ea5e9;font-style:normal;">{glucose}</b></p>', unsafe_allow_html=True)
-
-            blood_pressure = st.slider("Huyết áp tâm trương (BloodPressure) — mmHg", 0, 130, 70)
-            st.markdown(f'<p style="font-size:11.5px;color:#94a3b8;margin-top:3px;font-style:italic;">Bình thường: 60–80 · Hiện tại: <b style="color:#0ea5e9;font-style:normal;">{blood_pressure}</b></p>', unsafe_allow_html=True)
-
-            skin_thickness = st.slider("Độ dày nếp gấp da (SkinThickness) — mm", 0, 100, 20)
-            st.markdown('<p style="font-size:11.5px;color:#94a3b8;margin-top:3px;font-style:italic;">Cơ đầu tam đầu; bình thường: 10–35 mm</p>', unsafe_allow_html=True)
-
-            insulin = st.slider("Insulin huyết thanh — μU/mL", 0, 900, 80)
-            st.markdown('<p style="font-size:11.5px;color:#94a3b8;margin-top:3px;font-style:italic;">Bình thường lúc đói: 16–166 μU/mL</p>', unsafe_allow_html=True)
-
-        # ─── RIGHT ──────────────────────────────────────────
-        with right:
-            st.markdown("""
-            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;
-                 padding:22px 20px 6px;box-shadow:0 2px 12px rgba(14,165,233,0.07);">
-                <div style="font-family:'Lora',serif;font-size:17px;font-weight:700;
-                     color:#0f172a;padding-bottom:10px;border-bottom:2px solid #e0f2fe;
-                     margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-                    📏 Nhân trắc học
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            weight    = st.number_input("Cân nặng (Weight) — kg",  min_value=1.0,  max_value=200.0, value=70.0, step=0.5)
-            height_cm = st.number_input("Chiều cao (Height) — cm", min_value=50.0, max_value=250.0, value=165.0, step=0.5)
-
-            height_m = height_cm / 100.0
-            bmi      = weight / (height_m ** 2) if height_m > 0 else 0.0
-            bmi_col  = "#10b981" if 18.5 <= bmi < 25 else ("#f59e0b" if bmi < 30 else "#ef4444")
-            bmi_bg   = "#d1fae5" if 18.5 <= bmi < 25 else ("#fef3c7" if bmi < 30 else "#fee2e2")
-            bmi_lbl  = ("Bình thường" if 18.5 <= bmi < 25
-                        else ("Thừa cân" if bmi < 30
-                              else ("Béo phì" if bmi >= 30 else "Thiếu cân")))
-
-            st.markdown(f"""
-            <div style="background:{bmi_bg};border:1.5px solid {bmi_col}44;border-radius:12px;
-                 padding:14px 18px;display:flex;align-items:center;
-                 justify-content:space-between;margin-bottom:12px;">
-                <div>
-                    <div style="font-size:11px;color:#64748b;margin-bottom:2px;">Chỉ số BMI (tự động)</div>
-                    <div style="font-family:'Lora',serif;font-size:30px;color:{bmi_col};font-weight:700;">{bmi:.1f}</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:13px;color:{bmi_col};font-weight:700;">{bmi_lbl}</div>
-                    <div style="font-size:11px;color:#64748b;margin-top:3px;">{weight:.1f} kg / {height_cm:.0f} cm</div>
-                </div>
-            </div>
-            <div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;margin-bottom:18px;">
-                <div style="height:100%;width:{min(bmi/40*100,100):.0f}%;
-                     background:linear-gradient(90deg,#0ea5e9,{bmi_col});border-radius:4px;"></div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown("""
-            <div style="font-family:'Lora',serif;font-size:17px;font-weight:700;
-                 color:#0f172a;padding-bottom:10px;border-bottom:2px solid #e0f2fe;
-                 margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-                🧬 Di truyền &amp; tuổi
-            </div>
-            """, unsafe_allow_html=True)
-
-            dpf = st.number_input("Chức năng phả hệ tiểu đường (DPF)",
-                                   min_value=0.0, max_value=3.0, value=0.5, step=0.01)
-            st.markdown('<p style="font-size:11.5px;color:#94a3b8;margin-top:3px;font-style:italic;">Điểm cao = tiền sử gia đình nặng hơn</p>', unsafe_allow_html=True)
-
-            age = st.number_input("Tuổi (Age)", min_value=1, max_value=120, value=30, step=1)
-
-            st.markdown(f"""
-            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
-                 padding:14px 16px;margin-top:16px;">
-                <div style="font-size:11px;color:#64748b;margin-bottom:8px;font-weight:700;
-                     text-transform:uppercase;letter-spacing:0.06em;">📊 Tóm tắt</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;color:#334155;">
-                    <span>🩸 Glucose: <b>{glucose}</b></span>
-                    <span>💉 Insulin: <b>{insulin}</b></span>
-                    <span>❤️ BP: <b>{blood_pressure}</b></span>
-                    <span>📐 Skin: <b>{skin_thickness}</b></span>
-                    <span>🧬 DPF: <b>{dpf}</b></span>
-                    <span>🎂 Tuổi: <b>{age}</b></span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # ── Buttons ───────────────────────────────────────────────────────────
+        """, unsafe_allow_html=True)
+        
         st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
-        _, btn_mid, _ = st.columns([1, 4, 1])
-        with btn_mid:
-            predict_btn = st.button(
-                "🚀  Phân tích & Xem kết quả AI",
-                type="primary", use_container_width=True, key="do_predict")
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        _, back_mid, _ = st.columns([1, 4, 1])
-        with back_mid:
-            if st.button("← Quay về trang chủ", use_container_width=True, key="go_home"):
-                st.session_state["page"] = "home"
-                st.rerun()
-
-        # ── Prediction result ─────────────────────────────────────────────────
-        if predict_btn:
-            with st.spinner("🔬 AI đang phân tích..."):
-                model, scaler = _load_model_scaler()
-
-            if model and scaler:
-                arr  = np.array([[pregnancies, glucose, blood_pressure,
-                                   skin_thickness, insulin, bmi, dpf, age]])
-                prob = float(model.predict(scaler.transform(arr))[0][0])
-                color, bg_col, level_txt, emoji = _risk(prob)
-                pct  = prob * 100
-
-                if prob < 0.3:
-                    advice_items = [
-                        ("✅ Duy trì phong độ",    "Chỉ số đang lý tưởng. Tiếp tục chế độ ăn cân bằng."),
-                        ("🏃 Hoạt động thể chất",  "Duy trì ≥150 phút/tuần (chạy bộ, bơi, đạp xe)."),
-                        ("🗓️ Kiểm tra định kỳ",    "Đo đường huyết trong các kỳ khám tổng quát hàng năm."),
-                    ]
-                elif prob < 0.7:
-                    advice_items = [
-                        ("⚠️ Cảnh báo sớm",         "Chỉ số nằm vùng tiền tiểu đường — cần thay đổi lối sống."),
-                        ("🥗 Điều chỉnh ăn uống",   "Hạn chế carbs tinh chế; tăng rau xanh và chất xơ."),
-                        ("⚖️ Kiểm soát cân nặng",   "Giảm 5–7% trọng lượng nếu BMI đang thừa cân."),
-                    ]
-                else:
-                    advice_items = [
-                        ("🚨 Gặp bác sĩ ngay",      "Mức nguy cơ cao — đến cơ sở y tế sớm nhất có thể."),
-                        ("🍽️ Chế độ ăn nghiêm ngặt","Chia nhỏ bữa ăn, không để đường huyết tăng đột ngột."),
-                        ("📊 Theo dõi mỗi ngày",    "Đo đường huyết sau mỗi bữa ăn và ghi chép lại."),
-                    ]
-
-                # Build advice rows — 100% inline, no CSS class
-                advice_rows = ""
-                for i, (t, d) in enumerate(advice_items):
-                    border = "border-bottom:1px solid #e2e8f0;" if i < len(advice_items)-1 else ""
-                    advice_rows += (
-                        f'<div style="padding:8px 0;{border}">'
-                        f'<div style="font-weight:700;font-size:13px;color:#0f172a;">{t}</div>'
-                        f'<div style="font-size:12px;color:#475569;margin-top:3px;">{d}</div>'
-                        f'</div>'
-                    )
-
-                # Chips — inline
-                chips = ""
-                for label in [f"BMI {bmi:.1f}", f"Glucose {glucose}", f"Tuổi {age}", f"Insulin {insulin}"]:
-                    chips += (
-                        f'<span style="background:#f1f5f9;border:1px solid #e2e8f0;'
-                        f'border-radius:999px;padding:4px 13px;font-size:12px;color:#334155;">'
-                        f'{label}</span>'
-                    )
-
-                # Popup - Dùng components.html thay vì markdown
-                from streamlit.components.v1 import html
-                
-                popup_html_code = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        * {{
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                        }}
-                        body {{
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                        }}
-                        .overlay {{
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            right: 0;
-                            bottom: 0;
-                            background: rgba(15, 23, 42, 0.75);
-                            backdrop-filter: blur(6px);
-                            z-index: 99999;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }}
-                        .popup {{
-                            background: white;
-                            border-radius: 24px;
-                            padding: 32px;
-                            max-width: 460px;
-                            width: 90%;
-                            max-height: 85vh;
-                            overflow-y: auto;
-                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                        }}
-                        .icon {{
-                            display: inline-flex;
-                            align-items: center;
-                            justify-content: center;
-                            width: 70px;
-                            height: 70px;
-                            border-radius: 50%;
-                            background: {bg_col};
-                            font-size: 36px;
-                            margin-bottom: 12px;
-                        }}
-                        .level {{
-                            font-family: 'Georgia', serif;
-                            font-size: 24px;
-                            font-weight: bold;
-                            color: {color};
-                            margin-top: 8px;
-                        }}
-                        .percent {{
-                            font-family: 'Georgia', serif;
-                            font-size: 56px;
-                            font-weight: bold;
-                            color: {color};
-                            margin: 16px 0 12px;
-                        }}
-                        .risk-bar-bg {{
-                            background: #f1f5f9;
-                            border-radius: 10px;
-                            height: 10px;
-                            margin: 12px 0 8px;
-                            overflow: hidden;
-                        }}
-                        .risk-bar-fill {{
-                            background: linear-gradient(90deg, #10b981, {color});
-                            width: {pct:.1f}%;
-                            height: 100%;
-                            border-radius: 10px;
-                        }}
-                        .risk-labels {{
-                            display: flex;
-                            justify-content: space-between;
-                            font-size: 11px;
-                            color: #94a3b8;
-                            margin-bottom: 20px;
-                        }}
-                        .chip {{
-                            background: #f1f5f9;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 999px;
-                            padding: 5px 14px;
-                            font-size: 12px;
-                            color: #334155;
-                            display: inline-block;
-                        }}
-                        .advice-box {{
-                            background: #f8fafc;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 12px;
-                            padding: 14px;
-                            margin: 16px 0;
-                        }}
-                        .advice-title {{
-                            font-weight: bold;
-                            font-size: 13px;
-                            color: #0f172a;
-                        }}
-                        .advice-desc {{
-                            font-size: 12px;
-                            color: #475569;
-                            margin-top: 3px;
-                        }}
-                        .advice-item {{
-                            padding: 8px 0;
-                        }}
-                        .close-btn {{
-                            background: #0ea5e9;
-                            color: white;
-                            border: none;
-                            border-radius: 12px;
-                            padding: 10px 20px;
-                            width: 100%;
-                            font-weight: bold;
-                            font-size: 14px;
-                            cursor: pointer;
-                            margin-top: 16px;
-                        }}
-                        .close-btn:hover {{
-                            background: #0284c7;
-                        }}
-                        .disclaimer {{
-                            font-size: 10px;
-                            color: #94a3b8;
-                            text-align: center;
-                            margin-top: 12px;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="overlay" onclick="this.style.display='none'">
-                        <div class="popup" onclick="event.stopPropagation()">
-                            <div style="text-align: center;">
-                                <div class="icon">{emoji}</div>
-                                <div class="level">{level_txt}</div>
-                                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Xác suất mắc bệnh tiểu đường</div>
-                                <div class="percent">{pct:.1f}%</div>
-                            </div>
-                            
-                            <div class="risk-bar-bg">
-                                <div class="risk-bar-fill"></div>
-                            </div>
-                            <div class="risk-labels">
-                                <span>Thấp</span>
-                                <span>Trung bình</span>
-                                <span>Cao</span>
-                            </div>
-                            
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
-                                <span class="chip">BMI {bmi:.1f}</span>
-                                <span class="chip">Glucose {glucose}</span>
-                                <span class="chip">Tuổi {age}</span>
-                                <span class="chip">Insulin {insulin}</span>
-                            </div>
-                            
-                            <div class="advice-box">
-                                <div style="font-weight: bold; margin-bottom: 8px;">📋 Lời khuyên sức khỏe</div>
-                                {''.join(f'<div class="advice-item"><div class="advice-title">{t}</div><div class="advice-desc">{d}</div></div>' for t, d in advice_items)}
-                            </div>
-                            
-                            <div class="disclaimer">
-                                ⚠️ Kết quả AI — không thay thế chẩn đoán y tế chuyên nghiệp.
-                            </div>
-                            
-                            <button class="close-btn" onclick="parent.window.location.reload()">✕ Đóng</button>
-                        </div>
+        
+        # Card kết quả chính
+        _, main_col, _ = st.columns([1, 6, 1])
+        with main_col:
+            # Hiển thị kết quả
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                st.markdown(f"""
+                <div style="background:{result['bg_col']}; border-radius:20px; padding:30px; text-align:center;">
+                    <div style="font-size:64px;">{result['emoji']}</div>
+                    <div style="font-size:28px; font-weight:700; color:{result['color']}; margin:10px 0;">
+                        {result['level_txt']}
                     </div>
-                </body>
-                </html>
-                """
+                    <div style="font-size:13px; color:#64748b;">Xác suất mắc bệnh tiểu đường</div>
+                    <div style="font-size:64px; font-weight:700; color:{result['color']}; margin:15px 0;">
+                        {result['pct']:.1f}%
+                    </div>
+                    <div style="background:#e2e8f0; border-radius:10px; height:10px; margin:15px 0; overflow:hidden;">
+                        <div style="background:{result['color']}; width:{result['pct']}%; height:100%; border-radius:10px;"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b;">
+                        <span>Thấp</span><span>Trung bình</span><span>Cao</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:20px; padding:30px;">
+                    <div style="font-weight:700; margin-bottom:15px;">📊 Các chỉ số của bạn</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div><span style="color:#64748b;">BMI:</span><br><b>{result['bmi']:.1f}</b></div>
+                        <div><span style="color:#64748b;">Glucose:</span><br><b>{result['glucose']}</b></div>
+                        <div><span style="color:#64748b;">Huyết áp:</span><br><b>{result['bp']}</b></div>
+                        <div><span style="color:#64748b;">Insulin:</span><br><b>{result['insulin']}</b></div>
+                        <div><span style="color:#64748b;">Tuổi:</span><br><b>{result['age']}</b></div>
+                        <div><span style="color:#64748b;">DPF:</span><br><b>{result['dpf']}</b></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Lời khuyên
+            st.markdown("---")
+            st.markdown("### 💡 Lời khuyên sức khỏe")
+            
+            advice_items = result['advice_items']
+            for title, desc in advice_items:
+                with st.expander(title):
+                    st.write(desc)
+            
+            # Nút Kiểm tra lại
+            st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+            col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+            with col_btn2:
+                if st.button("🔄 Kiểm tra lại", type="primary", use_container_width=True):
+                    st.session_state["show_result"] = False
+                    st.session_state.pop("result_data", None)
+                    st.rerun()
+            
+            # Nút về trang chủ
+            _, back_col, _ = st.columns([1, 2, 1])
+            with back_col:
+                if st.button("🏠 Về trang chủ", use_container_width=True):
+                    st.session_state["page"] = "home"
+                    st.session_state["show_result"] = False
+                    st.rerun()
+    
+    else:
+        # HIỂN THỊ FORM NHẬP LIỆU BAN ĐẦU
+        st.markdown("""
+        <div style="background:linear-gradient(135deg,#e0f2fe,#f0fdf4);
+             border-bottom:1px solid #e2e8f0;padding:32px 24px 28px;text-align:center;">
+            <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:#0f172a;">
+                🩺 Kiểm Tra Nguy Cơ Tiểu Đường
+            </div>
+            <p style="font-size:13px;color:#64748b;margin-top:6px;">
+                Nhập các chỉ số lâm sàng — AI sẽ phân tích và hiển thị kết quả ngay lập tức
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+
+        # Form nhập liệu
+        _, main_col, _ = st.columns([1, 8, 1])
+
+        with main_col:
+            left, gap, right = st.columns([5, 0.5, 5])
+
+            with left:
+                st.markdown('<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:24px 22px;">', unsafe_allow_html=True)
+                st.markdown('<div class="section-header">📋 Thông số lâm sàng</div>', unsafe_allow_html=True)
+
+                pregnancies = st.number_input("Số lần mang thai", min_value=0, max_value=20, value=1, step=1)
+                glucose = st.slider("Đường huyết (mg/dL)", 0, 200, 120)
+                blood_pressure = st.slider("Huyết áp tâm trương (mmHg)", 0, 130, 70)
+                skin_thickness = st.slider("Độ dày nếp gấp da (mm)", 0, 100, 20)
+                insulin = st.slider("Insulin (μU/mL)", 0, 900, 80)
+
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            with right:
+                st.markdown('<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:24px 22px;">', unsafe_allow_html=True)
+                st.markdown('<div class="section-header">📏 Nhân trắc học & Tuổi</div>', unsafe_allow_html=True)
+
+                weight = st.number_input("Cân nặng (kg)", min_value=1.0, max_value=200.0, value=70.0, step=0.5)
+                height_cm = st.number_input("Chiều cao (cm)", min_value=50.0, max_value=250.0, value=165.0, step=0.5)
+
+                height_m = height_cm / 100.0
+                bmi = weight / (height_m ** 2) if height_m > 0 else 0.0
                 
-                # Hiển thị popup
-                html(popup_html_code, height=500, scrolling=False)
-                
-                # Dừng lại để không render thêm
-                st.stop()
+                st.markdown(f"""
+                <div style="background:#f1f5f9; border-radius:10px; padding:10px; margin:10px 0;">
+                    <span style="color:#64748b;">BMI của bạn:</span>
+                    <span style="font-size:20px; font-weight:bold; color:#0ea5e9;">{bmi:.1f}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+                dpf = st.number_input("Chức năng phả hệ tiểu đường (DPF)", min_value=0.0, max_value=3.0, value=0.5, step=0.01)
+                age = st.number_input("Tuổi", min_value=1, max_value=120, value=30, step=1)
+
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            # Nút phân tích
+            st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+            _, btn_mid, _ = st.columns([1, 4, 1])
+            with btn_mid:
+                predict_btn = st.button("🚀 Phân tích & Xem kết quả", type="primary", use_container_width=True)
+
+            _, back_mid, _ = st.columns([1, 4, 1])
+            with back_mid:
+                if st.button("← Quay về trang chủ", use_container_width=True):
+                    st.session_state["page"] = "home"
+                    st.rerun()
+
+            # Xử lý dự đoán
+            if predict_btn:
+                with st.spinner("🔬 AI đang phân tích..."):
+                    model, scaler = _load_model_scaler()
+
+                if model and scaler:
+                    arr = np.array([[pregnancies, glucose, blood_pressure,
+                                    skin_thickness, insulin, bmi, dpf, age]])
+                    prob = float(model.predict(scaler.transform(arr))[0][0])
+                    color, bg_col, level_txt, emoji, _ = _risk(prob)
+                    pct = prob * 100
+
+                    # Tạo lời khuyên
+                    if prob < 0.3:
+                        advice_items = [
+                            ("✅ Duy trì phong độ", "Chỉ số đang lý tưởng. Tiếp tục chế độ ăn cân bằng."),
+                            ("🏃 Hoạt động thể chất", "Duy trì ≥150 phút/tuần (chạy bộ, bơi, đạp xe)."),
+                            ("🗓️ Kiểm tra định kỳ", "Đo đường huyết trong các kỳ khám tổng quát hàng năm."),
+                        ]
+                    elif prob < 0.7:
+                        advice_items = [
+                            ("⚠️ Cảnh báo sớm", "Chỉ số nằm trong vùng tiền tiểu đường — cần thay đổi lối sống."),
+                            ("🥗 Điều chỉnh ăn uống", "Hạn chế carbs tinh chế; tăng rau xanh và chất xơ."),
+                            ("⚖️ Kiểm soát cân nặng", "Giảm 5–7% trọng lượng nếu BMI đang thừa cân."),
+                        ]
+                    else:
+                        advice_items = [
+                            ("🚨 Cần gặp bác sĩ ngay", "Mức nguy cơ cao — hãy đến cơ sở y tế sớm nhất."),
+                            ("🍽️ Chế độ ăn nghiêm ngặt", "Chia nhỏ bữa ăn, không để đường huyết tăng đột ngột."),
+                            ("📊 Theo dõi mỗi ngày", "Đo đường huyết sau mỗi bữa ăn và ghi chép."),
+                        ]
+
+                    # Lưu kết quả vào session state
+                    st.session_state["show_result"] = True
+                    st.session_state["result_data"] = {
+                        "pct": pct, "color": color, "bg_col": bg_col,
+                        "level_txt": level_txt, "emoji": emoji,
+                        "bmi": bmi, "glucose": glucose, "bp": blood_pressure,
+                        "insulin": insulin, "age": age, "dpf": dpf,
+                        "advice_items": advice_items
+                    }
+                    st.rerun()
