@@ -215,6 +215,38 @@ def show():
                 height_m = height_cm / 100.0
                 bmi = weight / (height_m ** 2) if height_m > 0 else 0.0
                 
+                # Tính màu cho BMI dựa vào giá trị
+                if bmi < 18.5:
+                    bmi_color = "#f59e0b"  # Vàng - Thiếu cân
+                    bmi_bg = "#fef3c7"
+                    bmi_label = "Thiếu cân"
+                elif bmi < 25:
+                    bmi_color = "#10b981"  # Xanh - Bình thường
+                    bmi_bg = "#d1fae5"
+                    bmi_label = "Bình thường"
+                elif bmi < 30:
+                    bmi_color = "#f59e0b"  # Vàng - Thừa cân
+                    bmi_bg = "#fef3c7"
+                    bmi_label = "Thừa cân"
+                else:
+                    bmi_color = "#ef4444"  # Đỏ - Béo phì
+                    bmi_bg = "#fee2e2"
+                    bmi_label = "Béo phì"
+                
+                st.markdown(f"""
+                <div style="background:{bmi_bg}; border-radius:12px; padding:14px 18px; margin:10px 0;
+                     display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                        <div style="font-size:11px; color:#64748b; margin-bottom:2px;">Chỉ số BMI (tự động)</div>
+                        <div style="font-family:'Lora',serif; font-size:32px; font-weight:700; color:{bmi_color};">{bmi:.1f}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:13px; font-weight:700; color:{bmi_color};">{bmi_label}</div>
+                        <div style="font-size:11px; color:#64748b; margin-top:3px;">{weight:.1f} kg / {height_cm:.0f} cm</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
                 st.markdown(f"""
                 <div style="background:#f1f5f9; border-radius:10px; padding:10px; margin:10px 0;">
                     <span style="color:#64748b;">BMI của bạn:</span>

@@ -13,9 +13,10 @@ def _load_css():
 
 # Tài khoản mặc định
 DEFAULT_ACCOUNTS = {
-    "admin@health.ai":   {"password": "health2024", "name": "Admin"},
-    "doctor@health.ai":  {"password": "doctor123",  "name": "Doctor"},
-    "patient@health.ai": {"password": "patient123", "name": "Patient"},
+    "tonngokhong@health.ai":   {"password": "tonngokhong", "name": "Tôn Ngộ Không"},
+    "trubacgioi@health.ai":  {"password": "trubatgioi",  "name": "Trư Bát Giới"},
+    "duongtang@health.ai": {"password": "duongtang123", "name": "Đường Tăng"},
+    "satang@health.ai": {"password": "satang123", "name": "Sa Tăng"},
 }
 
 
